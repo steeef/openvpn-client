@@ -103,6 +103,7 @@ vpn() { local server="$1" user="$2" pass="$3" port="${4:-1194}" \
     echo "cipher aes-256-cbc" >>$conf
     echo "auth sha256" >>$conf
     echo "ca /vpn/vpn-ca.crt" >>$conf
+    [ -f "/vpn/vpn-crl.crt" ] && echo "crl-verify /vpn/vpn-crl.crt" >>$conf
     echo "disable-occ" >>$conf
     echo "tls-client" >>$conf
     echo "remote-cert-tls server" >>$conf
