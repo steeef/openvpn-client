@@ -1,12 +1,14 @@
-FROM alpine
+FROM balenalib/aarch64-alpine
 MAINTAINER David Personette <dperson@gmail.com>
 
 # Install openvpn
+RUN ["cross-build-start"]
 RUN apk --no-cache --no-progress upgrade && \
     apk --no-cache --no-progress add bash curl ip6tables iptables openvpn \
                 shadow tini && \
     addgroup -S vpn && \
     rm -rf /tmp/*
+RUN ["cross-build-end"]
 
 COPY openvpn.sh /usr/bin/
 

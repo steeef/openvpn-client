@@ -2,7 +2,8 @@
 
 # OpenVPN
 
-OpenVPN client docker container
+This is an OpenVPN client docker container. It makes routing containers'
+traffic through OpenVPN easy.
 
 # What is OpenVPN?
 
@@ -15,7 +16,8 @@ capable of traversing network address translators (NATs) and firewalls.
 # How to use this image
 
 This OpenVPN container was designed to be started first to provide a connection
-to other containers (using `--net=container:vpn`, see below).
+to other containers (using `--net=container:vpn`, see below *Starting an OpenVPN
+client instance*).
 
 **NOTE**: More than the basic privileges are needed for OpenVPN. With docker 1.2
 or newer you can use the `--cap-add=NET_ADMIN` and `--device /dev/net/tun`
@@ -26,14 +28,18 @@ mode.
 below.
 
 **NOTE 3**: If you need access to other non HTTP proxy-able ports, please see
-the Routing  instructions below.
+the Routing instructions below.
 
 **NOTE 4**: If you have a VPN service that allows making local services
 available, you'll need to reuse the VPN container's network stack with the
 `--net=container:vpn` (replacing 'vpn' with what you named your instance of this
 container) when you launch the service in it's container.
 
-## Hosting an OpenVPN client instance
+**NOTE 5**: If you need a template for using this container with
+`docker-compose`, see the example
+[file](https://github.com/dperson/openvpn-client/raw/master/docker-compose.yml).
+
+## Starting an OpenVPN client instance
 
     sudo cp /path/to/vpn.crt /some/path/vpn-ca.crt
     sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
@@ -86,6 +92,10 @@ Running the following on your docker host should give you the correct network:
 **NOTE**: if you don't use the `-v` to configure your VPN, then you'll have to
 make sure that `redirect-gateway def1` is set, otherwise routing may not work.
 
+**NOTE 2**: if you have a port you want to make available, you have to add the
+docker `-p` option to the VPN container. The network stack will be reused by
+the second container (that's what `--net=container:vpn` does).
+
 ## Configuration
 
     sudo docker run -it --rm dperson/openvpn-client -h
@@ -93,68 +103,67 @@ make sure that `redirect-gateway def1` is set, otherwise routing may not work.
     Usage: openvpn.sh [-opt] [command]
     Options (fields in '[]' are optional, '<>' are required):
         -h          This help
+        -c '<passwd>' Configure an authentication password to open the cert
+                    required arg: '<passwd>'
+                    <passwd> password to access the certificate file
         -d          Use the VPN provider's DNS resolvers
-        -f          Firewall rules so that only the VPN and DNS are allowed to
+        -f '[port]' Firewall rules so that only the VPN and DNS are allowed to
                     send internet traffic (IE if VPN is down it's offline)
-        -r "<network>" CIDR network (IE 192.168.1.0/24)
-                    required arg: "<network>"
+                    optional arg: [port] to use, instead of default
+        -m '<mss>'  Maximum Segment Size <mss>
+                    required arg: '<mss>'
+        -p '<port>[;protocol]' Forward port <port>
+                    required arg: '<port>'
+                    optional arg: [protocol] to use instead of default (tcp)
+        -R '<network>' CIDR IPv6 network (IE fe00:d34d:b33f::/64)
+                    required arg: '<network>'
                     <network> add a route to (allows replies once the VPN is up)
-        -t ""       Configure timezone
-                    possible arg: "[timezone]" - zoneinfo timezone for container
+        -r '<network>' CIDR network (IE 192.168.1.0/24)
+                    required arg: '<network>'
+                    <network> add a route to (allows replies once the VPN is up)
         -v '<server;user;password[;port]>' Configure OpenVPN
-                    required arg: "<server>;<user>;<password>"
-                    <server> to connect to (multiple servers can be separated by :)
+                    required arg: '<server>;<user>;<password>'
+                    <server> to connect to (multiple servers are separated by :)
                     <user> to authenticate as
                     <password> to authenticate with
-                    optional arg: port to use, instead of default
+                    optional arg: [port] to use, instead of default
 
     The 'command' (if provided and valid) will be run instead of openvpn
 
-ENVIRONMENT VARIABLES (only available with `docker run`)
+ENVIRONMENT VARIABLES
 
+ * `CERT_AUTH` - As above, provide authentication to access certificate
  * `DNS` - As above, Use the VPN provider's DNS resolvers
+ * `FIREWALL` - As above, setup firewall to disallow net access w/o the VPN
+ * `MSS` - As above, set Maximum Segment Size
+ * `ROUTE6` - As above, add a route to allow replies to your internal network
  * `ROUTE` - As above, add a route to allow replies to your private network
- * `TZ` - As above, set a zoneinfo timezone, IE `EST5EDT`
+ * `TZ` - Set a timezone, IE `EST5EDT`
  * `VPN` - As above, setup a VPN connection
+ * `VPNPORT` - As above, setup port forwarding
+ * `GROUPID` - Set the GID for the vpn
 
 ## Examples
 
 Any of the commands can be run at creation with `docker run` or later with
-`docker exec -it openvpn.sh` (as of version 1.3 of docker).
+`docker exec -it openvpn openvpn.sh` (as of version 1.3 of docker).
 
 ### Setting the Timezone
-
-    sudo cp /path/to/vpn.crt /some/path/vpn-ca.crt
-    sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
-                -v /some/path:/vpn -d dperson/openvpn-client -t EST5EDT \
-                -v 'vpn.server.name;username;password'
-
-OR using `environment variables`
 
     sudo cp /path/to/vpn.crt /some/path/vpn-ca.crt
     sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
                 -v /some/path:/vpn -e TZ=EST5EDT -d dperson/openvpn \
                 -v 'vpn.server.name;username;password'
 
-Will get you the same settings as:
-
-    sudo cp /path/to/vpn.crt /some/path/vpn-ca.crt
-    sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
-                -v /some/path:/vpn -d dperson/openvpn-client \
-                -v 'vpn.server.name;username;password'
-    sudo docker exec -it vpn openvpn.sh -t EST5EDT ls -AlF /etc/localtime
-    sudo docker restart vpn
-
 ### VPN configuration
 
 In order to work you must provide VPN configuration and the certificate. You can
 use external storage for `/vpn`:
 
+    sudo cp /path/to/vpn.crt /some/path/vpn-ca.crt
     sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
                 -v /some/path:/vpn -d dperson/openvpn-client \
                 -v 'vpn.server.name;username;password'
-    sudo cp /path/to/vpn.crt /some/path/vpn-ca.crt
-    sudo docker restart vpn
 
 Or you can store it in the container:
 
@@ -166,14 +175,13 @@ Or you can store it in the container:
 
 ### Firewall
 
-It's just a simple command line argument (`-f`) to turn on the firewall, and
+It's just a simple command line argument (`-f ""`) to turn on the firewall, and
 block all outbound traffic if the VPN is down.
 
-    sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
-                -v /some/path:/vpn -d dperson/openvpn-client -f \
-                -v 'vpn.server.name;username;password'
     sudo cp /path/to/vpn.crt /some/path/vpn-ca.crt
-    sudo docker restart vpn
+    sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
+                -v /some/path:/vpn -d dperson/openvpn-client -f "" \
+                -v 'vpn.server.name;username;password'
 
 ### DNS Issues (May Look Like You Can't Connect To Anything)
 
