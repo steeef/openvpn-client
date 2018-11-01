@@ -235,7 +235,7 @@ route6="$dir/.firewall6"
 [[ "${VPNPORT:-""}" ]] && eval vpnportforward $(sed 's/^/"/; s/$/"/; s/;/" "/g'\
             <<< $VPNPORT)
 
-while getopts ":hc:df:m:p:R:r:v:" opt; do
+while getopts ":hc:df:m:p:R:r:s:v:" opt; do
     case "$opt" in
         h) usage ;;
         c) cert_auth "$OPTARG" ;;
