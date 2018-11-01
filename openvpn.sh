@@ -45,6 +45,17 @@ dns() {
     echo "down /etc/openvpn/down.sh" >>$conf
 }
 
+### up_script: run script after vpn connection created
+# Arguments:
+#   script)
+# Return: conf file that runs script after creating connection
+up_script() {
+    script="${1}"
+    sed -i '/up/d; /script-security/d' $conf
+    echo "script-security 2" >>$conf
+    echo "up /etc/openvpn/${script}" >>$conf
+}
+
 ### firewall: firewall all output not DNS/VPN that's not over the VPN connection
 # Arguments:
 #   none)
@@ -234,6 +245,7 @@ while getopts ":hc:df:m:p:R:r:v:" opt; do
         p) eval vpnportforward $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $OPTARG) ;;
         R) return_route6 "$OPTARG" ;;
         r) return_route "$OPTARG" ;;
+        s) up_script "$OPTARG" ;;
         v) eval vpn $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $OPTARG) ;;
         "?") echo "Unknown option: -$OPTARG"; usage 1 ;;
         ":") echo "No argument value for option: -$OPTARG"; usage 2 ;;
