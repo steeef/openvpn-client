@@ -26,7 +26,8 @@ fi
 # retry until port retrieved
 retries=0
 echo "Waiting until port retrieved."
-until pia_response=$(curl -s -f "${port_assignment_url}/?client_id=${pia_client_id}") \
+until pia_response=$(curl --interface tun0 -s -f \
+  "${port_assignment_url}/?client_id=${pia_client_id}") \
   || (( retries++ >= 30 )); do
   sleep 3
 done
