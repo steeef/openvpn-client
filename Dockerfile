@@ -9,7 +9,6 @@ RUN apk --no-cache --no-progress upgrade && \
     rm -rf /tmp/*
 
 COPY openvpn.sh /usr/bin/
-COPY pia-update-port.sh /etc/openvpn/pia-update-port.sh
 
 HEALTHCHECK --interval=60s --timeout=15s --start-period=120s \
              CMD curl -L 'https://api.ipify.org'

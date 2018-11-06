@@ -53,7 +53,7 @@ up_script() {
     script="${1}"
     sed -i '/up/d; /script-security/d' $conf
     echo "script-security 2" >>$conf
-    echo "up /etc/openvpn/${script}" >>$conf
+    echo "up ${script}" >>$conf
 }
 
 ### firewall: firewall all output not DNS/VPN that's not over the VPN connection
@@ -245,7 +245,7 @@ while getopts ":hc:df:m:p:R:r:s:v:" opt; do
         p) eval vpnportforward $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $OPTARG) ;;
         R) return_route6 "$OPTARG" ;;
         r) return_route "$OPTARG" ;;
-        s) up_script "$OPTARG" ;;
+        s) up_script "${dir}/${OPTARG}" ;;
         v) eval vpn $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $OPTARG) ;;
         "?") echo "Unknown option: -$OPTARG"; usage 1 ;;
         ":") echo "No argument value for option: -$OPTARG"; usage 2 ;;
